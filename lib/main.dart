@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Metshrek',
       theme: ThemeData.light(),
       home: MyHomePage(title: 'Metshrek'),
     );
@@ -30,10 +30,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  double _minuteRotation = 0;
-  double _hourRotation = 0;
-
-  // Theme.of(context).textTheme.display1,
+  List<int> shrekTime = [0, 0, 0, 0];
 
   @override
   Widget build(BuildContext context) {
@@ -44,55 +41,38 @@ class _MyHomePageState extends State<MyHomePage> {
     var faceWidth = size.width * 0.5;
     var faceHeight = faceWidth * (251 / 190); // Aspect ratio (251/190)
 
-    var longEarWidth = (37 / 190) * faceWidth;
-    var longEarHeight = longEarWidth * (114 / 37);
-
-    var shortEarWidth =
-        (37 / 190) * faceWidth; // 37 are the same widths for both ears
-    var shortEarHeight = shortEarWidth * (89 / 37);
-
-    print('Face width: $faceWidth');
-
     return Scaffold(
         appBar: AppBar(
-          // Here we take the value from the MyHomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
           title: Text(widget.title),
         ),
         body: Center(
-            child: Stack(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-//            Transform.rotate(
-//              Transform.rotate(
-//                child: Transform.translate(
-//                  child: Transform.rotate(
-//                    child: Image(
-//                      image: AssetImage('assets/long_ear.png'),
-//                      fit: BoxFit.none,
-//                      width: faceWidth,
-//                      height: faceHeight,
-//                    ),
-//                    angle: Angle.fromDegrees(90).radians,
-//                  ),
-//                  offset: Offset(faceWidth * 0.5, 0),
-//                ),
-//                angle: Angle.fromDegrees(_minuteRotation).radians,
-//                origin: Offset(0, 0),
-//              ),
-
-            HandWidget(
-              scale: scale,
-              width: faceWidth,
-              height: faceHeight,
-              image: AssetImage('assets/long_ear.png'),
-              minuteRotation: _minuteRotation,
+            Stack(
+              children: [
+                ...Hand.values.map((hand) =>
+                  HandWidget(
+                    scale: scale,
+                    width: faceWidth,
+                    height: faceHeight,
+                    hand: hand,
+                    time: shrekTime,
+                  )
+                ),
+                Image(
+                  image: AssetImage('assets/face.png'),
+                  fit: BoxFit.fill,
+                  width: faceWidth,
+                  height: faceHeight,
+                ),
+              ],
             ),
-            Image(
-              image: AssetImage('assets/face.png'),
-              fit: BoxFit.fill,
-              width: faceWidth,
-              height: faceHeight,
-            ),
+            Text(
+              '${getStyledTime()}',
+              style: Theme.of(context).textTheme.display1,
+            )
           ],
         )));
   }
@@ -101,36 +81,56 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    print('Starting rotation!');
+    Timer.periodic(Duration(milliseconds: 100), (_) => setState(() => shrekTime = getShrekTime()));
+  }
 
-    Timer.periodic(Duration(milliseconds: 10), (_) {
-      setState(() {
-        _minuteRotation += 1;
-        if (_minuteRotation >= 360) {
-          _minuteRotation = 0;
-          _hourRotation += 10;
-          if (_hourRotation >= 360) _hourRotation = 0;
-        }
-      });
-    });
+  List<int> getShrekTime() {
+    var today = DateTime.now();
+    var time = DateTime.now().difference(DateTime(today.year, today.month, today.day));
+
+    var shrek = time.inMilliseconds / 1000 / 60 / 90;
+
+    var hours = shrek.truncate();
+    var minutes = (shrek - hours) * 90;
+    var shrekonds = (minutes - minutes.truncate()) * 90;
+
+
+    var ret = [hours, minutes.truncate(), shrekonds.truncate(), (shrekonds * 10000).truncate()];
+    print('Current shrek: ${ret[1]}  \t   ${ret[2]}');
+    return ret;
+  }
+
+  String getStyledTime() {
+    var string = '';
+    shrekTime.forEach((time) => string += '${time.toString().padLeft(2, '0')}:');
+    return string.substring(0, 8);
   }
 }
 
+enum Hand {
+  HOUR, MINUTE, SHREKOND
+}
+
 class HandWidget extends StatefulWidget {
+  static const shortEar = AssetImage('assets/short_ear.png');
+  static const longEar = AssetImage('assets/long_ear.png');
+
   final double scale;
   final double width;
   final double height;
+  final Hand hand;
   final AssetImage image;
-  final minuteRotation;
+  final List<int> time;
 
   const HandWidget(
       {Key key,
       this.scale,
       this.width,
       this.height,
-      this.image,
-      this.minuteRotation})
-      : super(key: key);
+      this.hand,
+      this.time})
+      : this.image = hand == Hand.HOUR ? shortEar : longEar,
+        super(key: key);
 
   @override
   State<StatefulWidget> createState() => HandWidgetState();
@@ -140,78 +140,42 @@ class HandWidgetState extends State<HandWidget> {
   @override
   Widget build(BuildContext context) {
 
-    var size = MediaQuery.of(context).size;
+    var time = widget.time;
+    double angle;
+    if (widget.hand == Hand.HOUR || widget.hand == Hand.MINUTE) {
+      angle = (time[widget.hand.index] / 90) * 360;
+    } else {
+      angle = (time[3] / 10000 / 90) * 360;
+    }
 
-    var xOffset = widget.width / 2;
-    var yOffset = widget.height / 2;
-
-    var padding = widget.width * 0.2;
-    var calculated = calculate(widget.width / 2 + padding, widget.height / 2 + padding, widget.minuteRotation);
-
-    print(calculated);
+    var padding = widget.hand == Hand.HOUR ? widget.width * 0.1 : widget.width * 0.2;
+    var calculated = calculate(widget.width / 2 + padding,
+        widget.height / 2 + padding, angle);
 
     double deltaY = (calculated.dy);
     double deltaX = (calculated.dx);
     double resultRadians = atan2(deltaY, deltaX);
 
     return Stack(children: [
-//      CustomPaint(
-//        size: Size(widget.width, widget.height),
-//        painter: Outliner(widget.width, widget.height),
-//      ),
-        Transform.translate(
-//        child: Transform.translate(
-            child: Transform.rotate(
-                child: Image(
-                  image: AssetImage('assets/long_ear.png'),
-                  fit: BoxFit.none,
-                  width: widget.width,
-                  height: widget.height,
-                ),
-              angle: Angle.fromDegrees(Angle.fromRadians(resultRadians).degrees + 90).radians,
-            ),
-//          offset: Offset(widget.width * 0.5, 0),
-//        ),
-          offset: calculated,
+      Transform.translate(
+        child: Transform.rotate(
+          child: Image(
+            image: widget.image,
+            fit: BoxFit.none,
+            width: widget.width,
+            height: widget.height,
+          ),
+          angle:
+              Angle.fromDegrees(Angle.fromRadians(resultRadians).degrees + 90)
+                  .radians,
         ),
+        offset: calculated,
+      ),
     ]);
   }
 }
 
-class Outliner extends CustomPainter {
-  final double width;
-  final double height;
-
-  Outliner(this.width, this.height);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-//    canvas.drawOval(Rect.fromLTWH(0, 0, width, height), Paint()..color = Colors.red);
-
-    var xOffset = size.width / 2;
-    var yOffset = size.height / 2;
-
-    print('Dimens: $width, $height');
-
-    var points = List<Offset>();
-    for (double i = 0; i < 360; i += 0.5) {
-      var pointOffset = calculate(width * 0.45, height * 0.45, i);
-      points.add(pointOffset.translate(xOffset, yOffset));
-    }
-
-    canvas.drawPoints(
-        PointMode.points,
-        points,
-        Paint()
-          ..color = Colors.red
-          ..strokeWidth = 1);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
 Offset calculate(double width, double height, double angleDegree) {
-  var angleRadian = Angle.fromDegrees(angleDegree).radians;
+  var angleRadian = Angle.fromDegrees(angleDegree - 90).radians;
   return Offset(width * cos(angleRadian), height * sin(angleRadian));
 }
