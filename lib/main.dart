@@ -10,12 +10,14 @@ import 'package:intl/intl.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Metshrek',
-      theme: ThemeData.light(),
+      theme: ThemeData(
+        primaryColor: Color(0xFFA1A30F),
+        accentColor: Color(0xFFAC8B21),
+      ),
       home: MyHomePage(title: 'Metshrek'),
     );
   }
@@ -47,16 +49,11 @@ class _MyHomePageState extends State<MyHomePage> {
           title: Text(widget.title),
         ),
         body: ListView(
-//          mainAxisAlignment: MainAxisAlignment.center,
-//          crossAxisAlignment: CrossAxisAlignment.center,
           shrinkWrap: true,
           children: [
             Column(
-//              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Container(
-                  height: faceHeight / 2,
-                ),
+                Container(height: faceHeight / 2),
                 Stack(
                   children: [
                     ...Hand.values.map((hand) => HandWidget(
@@ -94,6 +91,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
             MetshrekToStandard(),
+            Text(
+              'Countdown',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.display1,
+            ),
+            MetshrekCountdown(),
+            Container(height: size.height / 2),
           ],
         ));
   }
@@ -132,9 +136,35 @@ List<int> convertToShrek(int milliseconds) {
 
 String getStyledTime(List<int> shrekTime) {
   var string = '';
-  shrekTime
-      .forEach((time) => string += '${time.toString().padLeft(2, '0')}:');
+  shrekTime.forEach((time) => string += '${time.toString().padLeft(2, '0')}:');
   return string.substring(0, 8);
+}
+
+String getFractionalMetshrek(List<int> metshrek) {
+  var top = (metshrek[0] * 90) + metshrek[1];
+  var bottom = 90;
+  return simplifyFraction(top / bottom);
+}
+
+String simplifyFraction(double x) {
+  if (x < 0) return "-" + simplifyFraction(-x);
+  double tolerance = 1.0E-6;
+  double h1 = 1;
+  double h2 = 0;
+  double k1 = 0;
+  double k2 = 1;
+  double b = x;
+  do {
+    double a = b.floorToDouble();
+    double aux = h1;
+    h1 = a * h1 + h2;
+    h2 = aux;
+    aux = k1;
+    k1 = a * k1 + k2;
+    k2 = aux;
+    b = 1 / (b - a);
+  } while ((x - h1 / k1).abs() > x * tolerance);
+  return '${h1.truncate()}/${k1.truncate()}';
 }
 
 enum Hand { HOUR, MINUTE, SHREKOND }
@@ -209,8 +239,9 @@ class MetshrekToStandard extends StatefulWidget {
 }
 
 class MetshrekToStandardState extends State<MetshrekToStandard> {
-  final format = DateFormat("HH:mm:ss");
+  final format = DateFormat("HH:mm");
   String metshrekTime = '';
+  String fractionalTime = '';
 
   @override
   Widget build(BuildContext context) {
@@ -219,31 +250,26 @@ class MetshrekToStandardState extends State<MetshrekToStandard> {
       child: Column(children: [
         Text('Input time:'),
         DateTimeField(
-//          style: Theme.of(context).textTheme.subhead,
           format: format,
           onShowPicker: (context, currentValue) async {
             final time = await showTimePicker(
               context: context,
-              initialTime: TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
+              initialTime:
+                  TimeOfDay.fromDateTime(currentValue ?? DateTime(1970)),
             );
             return DateTimeField.convert(time);
           },
-          onChanged: (dateTime) {
-            print('DateTime: $dateTime');
-            setState(() {
-              if (dateTime == null) {
-                metshrekTime = '';
-              } else {
-                print('Before: $dateTime');
-                dateTime = dateTime.add(dateTime.timeZoneOffset);
-                print('Before: $dateTime');
-                print('Mills: ${dateTime.millisecondsSinceEpoch}');
-                var conv = convertToShrek(dateTime.millisecondsSinceEpoch);
-                print('Conv: $conv');
-                metshrekTime = getStyledTime(conv);
-              }
-            });
-          },
+          onChanged: (dateTime) => setState(() {
+            if (dateTime == null) {
+              metshrekTime = '';
+              fractionalTime = '';
+            } else {
+              var shrekTime = convertToShrek(
+                  dateTime.add(dateTime.timeZoneOffset).millisecondsSinceEpoch);
+              metshrekTime = getStyledTime(shrekTime);
+              fractionalTime = getFractionalMetshrek(shrekTime);
+            }
+          }),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
@@ -252,7 +278,79 @@ class MetshrekToStandardState extends State<MetshrekToStandard> {
         Text(
           metshrekTime,
           style: Theme.of(context).textTheme.display1,
-        )
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
+          child: Text('Fractional Metshrek time:'),
+        ),
+        Text(
+          fractionalTime,
+          style: Theme.of(context).textTheme.display1,
+        ),
+      ]),
+    );
+  }
+}
+
+class MetshrekCountdown extends StatefulWidget {
+  @override
+  State<MetshrekCountdown> createState() => MetshrekCountdownState();
+}
+
+class MetshrekCountdownState extends State<MetshrekCountdown> {
+  final format = DateFormat("HH:mm");
+  String metshrekTime = '';
+  String fractionalTime = '';
+  DateTime target;
+  Timer currentTimer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(children: [
+        Text('Countdown to (Standard time):'),
+        DateTimeField(
+          format: format,
+          onShowPicker: (context, currentValue) async {
+            final time = await showTimePicker(
+              context: context,
+              initialTime:
+                  TimeOfDay.fromDateTime(currentValue ?? DateTime.now()),
+            );
+            return DateTimeField.convert(time);
+          },
+          onChanged: (dateTime) => setState(() {
+            target = dateTime;
+            currentTimer?.cancel();
+            if (target == null) return;
+
+            currentTimer = Timer.periodic(Duration(milliseconds: 100), (_) {
+              setState(() {
+                var now = DateTime.now();
+                var shrekTime = convertToShrek(target.difference(DateTime(1970, 1, 1, now.hour, now.minute, now.second, now.millisecond)).inMilliseconds);
+                metshrekTime = getStyledTime(shrekTime);
+                fractionalTime = getFractionalMetshrek(shrekTime);
+              });
+            });
+          }),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
+          child: Text('Remaining time (Metshrek):'),
+        ),
+        Text(
+          metshrekTime,
+          style: Theme.of(context).textTheme.display1,
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
+          child: Text('Remaining time (Fractional Metshrek):'),
+        ),
+        Text(
+          fractionalTime,
+          style: Theme.of(context).textTheme.display1,
+        ),
       ]),
     );
   }
