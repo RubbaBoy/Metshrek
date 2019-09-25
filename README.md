@@ -1,16 +1,7 @@
-# metshrek
+# Metshrek
 
-Metshrek: A shrek-based time unit
+Metshrek is a time unit based in the duration of Shrek 1, which is nearly exactly 90 minutes. This means there are 16 Shreks in a day, 30 minutes is a third of a Shrek, etc. This app shows the current time in metshrek with an animated Shrek with his ears as the hands of the clock. It also features a 'standard' time to metshrek, along with a time countdown, bot conversion units featuring easier to read fractions.
 
-## Getting Started
+![](https://rubbaboy.me/images/u8xv68c)
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+![](https://rubbaboy.me/images/qgxsj6f)
