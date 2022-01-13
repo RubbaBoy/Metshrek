@@ -44,62 +44,85 @@ class _MyHomePageState extends State<MyHomePage> {
     var faceWidth = size.width * 0.5;
     var faceHeight = faceWidth * (251 / 190); // Aspect ratio (251/190)
 
-    return Scaffold(
+    return DefaultTabController(
+      length: 4,
+      child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.title),
+          bottom: TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.access_time)), // Clock
+              Tab(icon: Icon(Icons.swap_horiz)), // Conversions
+              Tab(icon: Icon(Icons.timer)), // Stopwatch
+              Tab(icon: Icon(Icons.calendar_today)), // Calendar
+            ],
+          ),
+          title: Text('Tabs Demo'),
         ),
-        body: ListView(
-          shrinkWrap: true,
+        body: TabBarView(
           children: [
-            Column(
+            // Clock
+            ListView(
+              shrinkWrap: true,
               children: [
-                Container(height: faceHeight / 2),
-                Stack(
+                Column(
                   children: [
-                    ...Hand.values.map((hand) => HandWidget(
-                          scale: scale,
+                    Container(height: faceHeight / 2),
+                    Stack(
+                      children: [
+                        ...Hand.values.map((hand) => HandWidget(
+                              scale: scale,
+                              width: faceWidth,
+                              height: faceHeight,
+                              hand: hand,
+                              time: shrekTime,
+                            )),
+                        Image(
+                          image: AssetImage('assets/face.png'),
+                          fit: BoxFit.fill,
                           width: faceWidth,
                           height: faceHeight,
-                          hand: hand,
-                          time: shrekTime,
-                        )),
-                    Image(
-                      image: AssetImage('assets/face.png'),
-                      fit: BoxFit.fill,
-                      width: faceWidth,
-                      height: faceHeight,
+                        ),
+                      ],
                     ),
                   ],
                 ),
+                Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    getStyledTime(getShrekTime()),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.display2,
+                  ),
+                ),
               ],
             ),
-            Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                getStyledTime(getShrekTime()),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.display2,
-              ),
-//              ),
+            // Conversions
+            ListView(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 40, 0, 0),
+                  child: Text(
+                    'Metshrek conversions',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.display1,
+                  ),
+                ),
+                MetshrekToStandard(),
+                Text(
+                  'Countdown',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.display1,
+                ),
+                MetshrekCountdown(),
+                Container(height: size.height / 2),
+              ],
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 40, 0, 0),
-              child: Text(
-                'Metshrek conversions',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.display1,
-              ),
-            ),
-            MetshrekToStandard(),
-            Text(
-              'Countdown',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.display1,
-            ),
-            MetshrekCountdown(),
-            Container(height: size.height / 2),
+            Icon(Icons.directions_bike),
+            Icon(Icons.class_),
           ],
-        ));
+        ),
+      ),
+    );
   }
 
   @override
@@ -328,7 +351,10 @@ class MetshrekCountdownState extends State<MetshrekCountdown> {
             currentTimer = Timer.periodic(Duration(milliseconds: 100), (_) {
               setState(() {
                 var now = DateTime.now();
-                var shrekTime = convertToShrek(target.difference(DateTime(1970, 1, 1, now.hour, now.minute, now.second, now.millisecond)).inMilliseconds);
+                var shrekTime = convertToShrek(target
+                    .difference(DateTime(1970, 1, 1, now.hour, now.minute,
+                        now.second, now.millisecond))
+                    .inMilliseconds);
                 metshrekTime = getStyledTime(shrekTime);
                 fractionalTime = getFractionalMetshrek(shrekTime);
               });
