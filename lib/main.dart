@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
+  MyHomePage({Key? key, required this.title}) : super(key: key);
 
   final String title;
 
@@ -91,7 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Text(
                     getStyledTime(getShrekTime()),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.display2,
+                    style: Theme.of(context).textTheme.headline3,
                   ),
                 ),
               ],
@@ -104,14 +104,14 @@ class _MyHomePageState extends State<MyHomePage> {
                   child: Text(
                     'Metshrek conversions',
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.display1,
+                    style: Theme.of(context).textTheme.headline4,
                   ),
                 ),
                 MetshrekToStandard(),
                 Text(
                   'Countdown',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.display1,
+                  style: Theme.of(context).textTheme.headline4,
                 ),
                 MetshrekCountdown(),
                 Container(height: size.height / 2),
@@ -204,7 +204,7 @@ class HandWidget extends StatefulWidget {
   final List<int> time;
 
   const HandWidget(
-      {Key key, this.scale, this.width, this.height, this.hand, this.time})
+      {Key? key, required this.scale, required this.width, required this.height, required this.hand, required this.time})
       : this.image = hand == Hand.HOUR ? shortEar : longEar,
         super(key: key);
 
@@ -300,7 +300,7 @@ class MetshrekToStandardState extends State<MetshrekToStandard> {
         ),
         Text(
           metshrekTime,
-          style: Theme.of(context).textTheme.display1,
+          style: Theme.of(context).textTheme.headline4,
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
@@ -308,7 +308,7 @@ class MetshrekToStandardState extends State<MetshrekToStandard> {
         ),
         Text(
           fractionalTime,
-          style: Theme.of(context).textTheme.display1,
+          style: Theme.of(context).textTheme.headline4,
         ),
       ]),
     );
@@ -324,8 +324,8 @@ class MetshrekCountdownState extends State<MetshrekCountdown> {
   final format = DateFormat("HH:mm");
   String metshrekTime = '';
   String fractionalTime = '';
-  DateTime target;
-  Timer currentTimer;
+  DateTime? target;
+  Timer? currentTimer;
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +352,7 @@ class MetshrekCountdownState extends State<MetshrekCountdown> {
               setState(() {
                 var now = DateTime.now();
                 var shrekTime = convertToShrek(target
-                    .difference(DateTime(1970, 1, 1, now.hour, now.minute,
+                    !.difference(DateTime(1970, 1, 1, now.hour, now.minute,
                         now.second, now.millisecond))
                     .inMilliseconds);
                 metshrekTime = getStyledTime(shrekTime);
@@ -367,7 +367,7 @@ class MetshrekCountdownState extends State<MetshrekCountdown> {
         ),
         Text(
           metshrekTime,
-          style: Theme.of(context).textTheme.display1,
+          style: Theme.of(context).textTheme.headline4,
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(0, 20, 0, 5),
@@ -375,7 +375,7 @@ class MetshrekCountdownState extends State<MetshrekCountdown> {
         ),
         Text(
           fractionalTime,
-          style: Theme.of(context).textTheme.display1,
+          style: Theme.of(context).textTheme.headline4,
         ),
       ]),
     );
